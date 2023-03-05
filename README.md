@@ -37,7 +37,7 @@ Skip this step if you have a Herokuish PaaS environment already such as Dokku.
 1. In Features -> OAuth & Permissions, execute "Install to Workspace"
 
 ### 3. Environment Variables Setup
-Requires the following evironment variables.
+Requires the following environment variables.
 
 * SLACK_API_TOKEN
     * In Features -> OAuth & Permissions, copy "Bot User OAuth Token"
@@ -48,6 +48,12 @@ Requires the following evironment variables.
 * OPENAI_API_KEY
     * Navigate to your OpenAI API console and create a new secret key
     * https://platform.openai.com/account/api-keys
+
+Optionally these variables can be added.
+* GOOGLE_SEARCH_API_KEY
+    * See https://programmablesearchengine.google.com/about/
+* GOOGLE_SEARCH_API_ENGINE_ID
+    * See https://programmablesearchengine.google.com/about/
 
 ```
 heroku config:set SLACK_API_TOKEN=<SLACK_API_TOKEN>
