@@ -1,0 +1,25 @@
+[package]
+name = "yoshino-radio"
+version = "0.1.0"
+edition = "2021"
+
+[package.metadata.lambda.deploy]
+env_file = ".env.production"
+
+[dependencies]
+lambda_http = "0.8.3"
+lambda_runtime = "0.8.3"
+tokio = { version = "1", features = ["macros", "rt", "net", "io-util"] }
+tracing = { version = "0.1", features = ["log"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
+
+serde = "1.0.193"
+serde_json = "1.0.108"
+anyhow = "1.0.75"
+
+hex = "0.4.3"
+sha2 = "0.10.8"
+hmac = "0.12.1"
+tokio-util = { version = "0.7.10", features = ["rt"] }
+
+cores = { path = "../cores" }

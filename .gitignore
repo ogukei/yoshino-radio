@@ -1,5 +1,5 @@
 
-/target
+target/
 
-/.env.production
-/.env.production.tpl
+.env.production
+.env.production.tpl
