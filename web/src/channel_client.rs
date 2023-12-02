@@ -3,11 +3,13 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use anyhow::bail;
-use tokio::io::{AsyncWriteExt, AsyncReadExt};
+use aws_config::BehaviorVersion;
+use aws_sdk_lambda::primitives::Blob;
+use aws_sdk_lambda::types::InvocationType;
+use cores::ipc::InvokeMessage;
 use tracing::info;
-use tokio::net::TcpStream;
 
-use cores::ipc::{ChannelMessage, IPC_EXTENSION_ENDPOINT, IPC_ACCEPT_ACK_TOKEN};
+use aws_sdk_lambda::Client;
 
 pub struct ChannelClient {}
 
@@ -18,20 +20,18 @@ impl ChannelClient {
         Arc::new(client)
     }
 
-    pub async fn invoke(self: &Arc<Self>, message: ChannelMessage) -> Result<()> {
+    pub async fn invoke(self: &Arc<Self>, message: InvokeMessage) -> Result<()> {
+        let config = aws_config::load_defaults(BehaviorVersion::v2023_11_09()).await;
         info!("invoke in progress");
-        let mut stream = TcpStream::connect(IPC_EXTENSION_ENDPOINT).await?;
-        // ensure the extension is ready to receive messages
-        let mut buffer = IPC_ACCEPT_ACK_TOKEN.clone();
-        stream.read_exact(&mut buffer).await?;
-        if buffer.to_vec() != IPC_ACCEPT_ACK_TOKEN.to_vec() {
-            bail!("ack failure");
-        }
-        // write
-        let content = serde_json::to_string(&message)?;
-        stream.write_all(content.as_bytes()).await?;
-        stream.shutdown().await?;
+        let payload = serde_json::to_string(&message)?;
+        let client = Client::new(&config);
+        client.invoke()
+            .function_name("yoshino-radio-worker")
+            .payload(Blob::new(payload))
+            .invocation_type(InvocationType::Event)
+            .send()
+            .await?;
         info!("invoke complete");
         Ok(())
     }
-} 
+}

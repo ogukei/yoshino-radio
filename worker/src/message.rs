@@ -1,13 +1,12 @@
 
 use std::sync::Arc;
 
-use cores::ipc::ChannelMessage;
-
 use anyhow::Result;
+use cores::ipc::InvokeMessage;
 use serde::Deserialize;
 use tracing::info;
 
-use crate::{extension_context::ExtensionContext, slack_client::SlackClient};
+use crate::{slack_client::SlackClient};
 
 use serde_json;
 
@@ -29,30 +28,26 @@ struct MessageEventCallbackBody {
 
 #[derive(Deserialize)]
 struct MessageEvent {
+    bot_id: Option<String>,
     text: String,
     channel: String,
 }
 
-
 pub struct MessageHandle {
-    extension_context: Arc<ExtensionContext>,
 }
 
 impl MessageHandle {
-    pub fn new(extension_context: &Arc<ExtensionContext>) -> Arc<Self> {
-        let extension_context = Arc::clone(extension_context);
+    pub fn new() -> Arc<Self> {
         let server = Self {
-            extension_context,
         };
         Arc::new(server)
     }
 
     // https://api.slack.com/events/message.im
-    pub async fn handle_message(&self, message: ChannelMessage) -> Result<()> {
-        let ChannelMessage::SlackEvent(slack_event) = message;
-        info!("extension received {}, {}", slack_event.event_type, slack_event.body);
-        match slack_event.event_type.as_str() {
-            "event_callback" => self.handle_slack_event_callback(&slack_event.body).await,
+    pub async fn handle_message(&self, message: InvokeMessage) -> Result<()> {
+        info!("worker received {}, {}", message.event_type, message.body);
+        match message.event_type.as_str() {
+            "event_callback" => self.handle_slack_event_callback(&message.body).await,
             _ => Ok(())
         }
     }
@@ -68,7 +63,10 @@ impl MessageHandle {
     pub async fn handle_slack_message(&self, body: &str) -> Result<()> {
         let body: MessageEventCallbackBody = serde_json::from_str(body)?;
         let message_event = body.event;
-        let client = SlackClient::new(&self.extension_context).await?;
+        if message_event.bot_id.is_some() {
+            return Ok(())
+        }
+        let client = SlackClient::new().await?;
         client.send(message_event.channel, message_event.text + "!").await?;
         Ok(())
     }

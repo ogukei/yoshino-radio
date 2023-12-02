@@ -23,3 +23,6 @@ hmac = "0.12.1"
 tokio-util = { version = "0.7.10", features = ["rt"] }
 
 cores = { path = "../cores" }
+aws-sdk-lambda = "1.3.0"
+aws-types = "1.0.1"
+aws-config = { version = "1.0.1", features = ["behavior-version-latest"] }

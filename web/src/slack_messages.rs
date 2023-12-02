@@ -1,6 +1,6 @@
 
 use std::sync::Arc;
-use cores::ipc::{ChannelMessage, SlackEventMessage};
+use cores::ipc::InvokeMessage;
 
 use anyhow::Result;
 
@@ -21,11 +21,10 @@ impl SlackEventMessageHandler {
 
     pub async fn process_event_callback(self: &Arc<Self>, event_type: String, body: String) -> Result<()> {
         let channel_client = self.runtime_context.channel_client();
-        let slack_event = SlackEventMessage {
+        let message = InvokeMessage {
             event_type,
             body,
         };
-        let message = ChannelMessage::SlackEvent(slack_event);
         channel_client.invoke(message).await?;
         Ok(())
     }

@@ -1,23 +1,26 @@
+use cores::ipc::InvokeMessage;
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
 
 use serde::{Deserialize, Serialize};
+use tracing::info;
 
-#[derive(Deserialize)]
-struct Request {
-    command: String,
-}
+use crate::message::MessageHandle;
+
+mod message;
+mod slack_client;
 
 #[derive(Serialize)]
 struct Response {
     req_id: String,
-    msg: String,
 }
 
-async fn function_handler(event: LambdaEvent<Request>) -> Result<Response, Error> {
-    let command = event.payload.command;
+async fn function_handler(event: LambdaEvent<InvokeMessage>) -> Result<Response, Error> {
+    let message = event.payload;
+    let handle = MessageHandle::new();
+    info!("got body {}", message.body);
+    handle.handle_message(message).await?;
     let resp = Response {
         req_id: event.context.request_id,
-        msg: format!("Command {}.", command),
     };
     Ok(resp)
 }
