@@ -15,7 +15,7 @@ struct CompletionsRequestBody {
     stream: bool,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct CompletionsRequestMessage {
     pub role: String,
     pub content: String,

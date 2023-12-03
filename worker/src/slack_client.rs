@@ -1,5 +1,5 @@
 
-use std::{sync::Arc, env};
+use std::{sync::Arc, env, os::unix::thread};
 use anyhow::Result;
 use reqwest::{self, Client};
 use serde::{Deserialize, Serialize};
@@ -16,11 +16,18 @@ struct PostRequestBody {
 struct PostResponseBody {
     channel: String,
     ts: String,
+    message: PostResponseMessage,
+}
+
+#[derive(Deserialize)]
+struct PostResponseMessage {
+    thread_ts: Option<String>,
 }
 
 pub struct PostResult {
     pub channel: String,
     pub ts: String,
+    pub thread_ts: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -34,6 +41,31 @@ struct UpdateRequestBody {
 struct UpdateResponseBody {
     channel: String,
     ts: String,
+}
+
+#[derive(Serialize)]
+struct RepliesRequestBody {
+    channel: String,
+    ts: String,
+}
+
+#[derive(Deserialize)]
+struct RepliesResponseBody {
+    messages: Vec<RepliesMessage>,
+}
+
+#[derive(Debug)]
+pub struct RepliesResult {
+    pub messages: Vec<RepliesMessage>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct RepliesMessage {
+    pub r#type: String,
+    pub ts: String,
+    pub text: String,
+    pub thread_ts: String,
+    pub bot_id: Option<String>,
 }
 
 pub struct SlackClient {
@@ -52,12 +84,12 @@ impl SlackClient {
     }
 
     // https://api.slack.com/methods/chat.postMessage
-    pub async fn post(&self, channel: String, thread_ts: Option<String>, text: String) -> Result<PostResult> {
+    pub async fn post(&self, channel: &str, thread_ts: Option<&str>, text: String) -> Result<PostResult> {
         let client_token = env::var("SLACK_CLIENT_TOKEN")?;
         let request_body = PostRequestBody {
-            channel,
-            text,
-            thread_ts,
+            channel: channel.into(),
+            text: text.into(),
+            thread_ts: thread_ts.map(|v| v.into()),
         };
         let response = self.client.post("https://slack.com/api/chat.postMessage")
             .header("Content-type", "application/json; charset=utf-8")
@@ -71,16 +103,17 @@ impl SlackClient {
         let result = PostResult {
             channel: response.channel,
             ts: response.ts,
+            thread_ts: response.message.thread_ts,
         };
         Ok(result)
     }
 
     // https://api.slack.com/methods/chat.update
-    pub async fn update(&self, channel: String, ts: String, text: String) -> Result<()> {
+    pub async fn update(&self, channel: &str, ts: &str, text: String) -> Result<()> {
         let client_token = env::var("SLACK_CLIENT_TOKEN")?;
         let request_body = UpdateRequestBody {
-            channel,
-            ts,
+            channel: channel.into(),
+            ts: ts.into(),
             text,
         };
         let response = self.client.post("https://slack.com/api/chat.update")
@@ -94,4 +127,22 @@ impl SlackClient {
         let _response: UpdateResponseBody = serde_json::from_str(&text)?;
         Ok(())
     }
+
+    // https://api.slack.com/methods/conversations.replies
+    pub async fn replies(&self, channel: &str, ts: &str) -> Result<RepliesResult> {
+        let client_token = env::var("SLACK_CLIENT_TOKEN")?;
+        let response = self.client.get("https://slack.com/api/conversations.replies")
+            .header("Content-type", "application/x-www-form-urlencoded; charset=utf-8")
+            .header("Authorization", ["Bearer", &client_token].join(" "))
+            .query(&[("channel", channel), ("ts", &ts)])
+            .send()
+            .await?;
+        let text = response.text().await?;
+        info!("slack conversations.replies response {:?}", text);
+        let response: RepliesResponseBody = serde_json::from_str(&text)?;
+        let result = RepliesResult {
+            messages: response.messages,
+        };
+        Ok(result)
+        }
 }

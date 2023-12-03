@@ -1,7 +1,7 @@
 
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{Result, Context};
 use cores::ipc::InvokeMessage;
 use serde::Deserialize;
 use tracing::info;
@@ -33,6 +33,7 @@ struct MessageEvent {
     text: String,
     channel: String,
     ts: String,
+    thread_ts: Option<String>,
 }
 
 pub struct MessageHandle {
@@ -70,22 +71,42 @@ impl MessageHandle {
     async fn handle_slack_message(&self, body: &str) -> Result<()> {
         let body: MessageEventCallbackBody = serde_json::from_str(body)?;
         let message_event = body.event;
-        let text = message_event.text.clone();
-        let client = SlackClient::new().await?;
-        let result = client.post(
-            message_event.channel, 
-            Some(message_event.ts),
-             format!("Hi! `[Processing {}...]`", message_event.text)).await?;
+        let text = message_event.text;
+        let channel = message_event.channel;
+        let slack_client = SlackClient::new().await?;
+        let post_result = slack_client.post(
+            &channel,
+            Some(&message_event.ts),
+             format!("Hi! `[Processing {}...]`", &text)).await?;
+        let thread_ts = post_result.thread_ts
+            .as_ref()
+            .context("missing thread_ts")?;
+        // get replies
+        let replies = slack_client.replies(&channel, thread_ts).await?;
+        // construct completions request
         let openai_client = OpenAIClient::new().await?;
-        let messages = vec![
-            CompletionsRequestMessage {
-                role: "user".into(),
-                content: text,
-            }
-        ];
+        let messages: Vec<CompletionsRequestMessage> = replies.messages.into_iter()
+            .filter_map(|message| {
+                let message = match (message.r#type.as_str(), &message.bot_id) {
+                    ("message", None) => CompletionsRequestMessage {
+                        role: "user".into(),
+                        content: message.text,
+                    },
+                    ("message", Some(_)) => CompletionsRequestMessage {
+                        role: "assistant".into(),
+                        content: message.text,
+                    },
+                    _ => return None,
+                };
+                Some(message)
+            })
+            .collect();
+        info!("completions request messages {:?}", messages);
+        // run completions
         let mut completions = String::new();
         let mut stream = openai_client.completions(messages).await?;
         while let Some(item) = stream.next().await {
+            info!("got item {:?}", item);
             let Ok(chunks) = item else { continue };
             let chunks: Vec<CompletionsMessageChunk> = chunks;
             for chunk in chunks {
@@ -96,7 +117,7 @@ impl MessageHandle {
                 }
             }
         }
-        client.update(result.channel, result.ts, completions).await?;
+        slack_client.update(&channel, &post_result.ts, completions).await?;
         Ok(())
     }
 }
