@@ -13,6 +13,7 @@ use crate::openai_client::CompletionsMessageChunk;
 use anyhow::Result;
 use futures_util::StreamExt;
 use futures_util::Stream;
+use futures_util::future;
 
 pub struct Completions {
     client: Arc<OpenAIClient>,
@@ -31,8 +32,9 @@ impl Completions {
         let contents = self.concatenated_contents(messages).await?;
         let windows = periodic_buffered_window(Duration::from_secs(1), contents);
         let latest_content_stream = windows
-            .filter_map(|v| async move {
-                v.last().map(String::clone)
+            .filter_map(|v| {
+                let v = v.last().map(String::clone);
+                future::ready(v)
             })
             .boxed();
         Ok(latest_content_stream)
