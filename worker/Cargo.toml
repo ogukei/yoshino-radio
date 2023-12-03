@@ -17,6 +17,7 @@ tracing-subscriber = { version = "0.3", default-features = false, features = ["f
 tokio-util = { version = "0.7.10", features = ["rt"] }
 anyhow = "1.0.75"
 serde_json = "1.0.108"
-reqwest = { version = "0.11.22", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.11.22", default-features = false, features = ["json", "rustls-tls", "stream"] }
 
 cores = { path = "../cores" }
+futures-util = { version = "0.3.0", default-features = false }
