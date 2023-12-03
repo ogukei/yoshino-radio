@@ -52,20 +52,22 @@ make
 ### 4. Setup Credentials
 
 * Place `web/.env.production` env file with the following content
+   * Find your Slack App's signing secret in the Basic Information > App Credentials
+   * https://api.slack.com/apps
 
 ```
-
 SLACK_SIGNING_SECRET=abcdef12345
-
 ```
 
 * Place `worker/.env.production` env file with the following content
+   * Find your Slack App's client token in the OAuth & Permissions > OAuth Tokens for Your Workspace
+      * https://api.slack.com/apps
+   * Find your OpenAI API key in the console
+      * https://platform.openai.com/api-keys
 
 ```
-
 SLACK_CLIENT_TOKEN=xoxb-12345
 OPENAI_API_KEY=sk-12345
-
 ```
 
 ### 5. Deploy
