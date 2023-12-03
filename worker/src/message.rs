@@ -1,15 +1,18 @@
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use anyhow::{Result, Context};
 use cores::ipc::InvokeMessage;
 use serde::Deserialize;
 use tracing::info;
 use futures_util::StreamExt;
-
-use crate::{slack_client::SlackClient, openai_client::{OpenAIClient, CompletionsRequestMessage, CompletionsMessageChunk}};
+use crate::{
+    slack_client::SlackClient, 
+    openai_client::{OpenAIClient, CompletionsRequestMessage, CompletionsMessageChunk},
+    buffer_stream::periodic_buffered_window};
 
 use serde_json;
+use crate::completions::Completions;
 
 #[derive(Deserialize)]
 struct AnyEventCallbackBody {
@@ -103,21 +106,12 @@ impl MessageHandle {
             .collect();
         info!("completions request messages {:?}", messages);
         // run completions
-        let mut completions = String::new();
-        let mut stream = openai_client.completions(messages).await?;
-        while let Some(item) = stream.next().await {
-            info!("got item {:?}", item);
-            let Ok(chunks) = item else { continue };
-            let chunks: Vec<CompletionsMessageChunk> = chunks;
-            for chunk in chunks {
-                for choise in chunk.choices {
-                    if let Some(content) = choise.delta.content {
-                        completions += &content;
-                    }
-                }
-            }
+        let completions = Completions::new(&openai_client)?;
+        let mut content_stream = completions.periodic_contents(messages).await?;
+        while let Some(content) = content_stream.next().await {
+            slack_client.update(&channel, &post_result.ts, content.clone()).await?;
         }
-        slack_client.update(&channel, &post_result.ts, completions).await?;
+        info!("completions complete!");
         Ok(())
     }
 }

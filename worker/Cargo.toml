@@ -10,7 +10,7 @@ env_file = ".env.production"
 
 lambda_runtime = "0.8.3"
 serde = "1.0.136"
-tokio = { version = "1", features = ["macros"] }
+tokio = { version = "1", features = ["macros", "time"] }
 tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
 
@@ -21,3 +21,5 @@ reqwest = { version = "0.11.22", default-features = false, features = ["json", "
 
 cores = { path = "../cores" }
 futures-util = { version = "0.3.0", default-features = false }
+async-stream = "0.3.5"
+tokio-stream = "0.1.14"

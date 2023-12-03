@@ -9,6 +9,8 @@ use crate::message::MessageHandle;
 mod message;
 mod slack_client;
 mod openai_client;
+mod buffer_stream;
+mod completions;
 
 #[derive(Serialize)]
 struct Response {
