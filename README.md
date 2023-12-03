@@ -1,5 +1,4 @@
 
-## Usage
 # Yoshino Radio
 
 A simple example of integrating AWS Lambda, Slack and ChatGPT in Rust
@@ -98,5 +97,5 @@ cd ./worker
 make deploy
 ```
 
-### 5. Final Setup
+### 6. Final Setup
 Done Buooo. Open Slack and make sure you can now make DM conversations with the bot.
