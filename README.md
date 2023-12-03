@@ -78,20 +78,21 @@ See https://docs.aws.amazon.com/sdk-for-php/v3/developer-guide/guide_credentials
 
 #### Deploying Web Runtime
 
-* Copy the URL displayed on the console after running the following command
-* Paste it to the [Slack App](https://api.slack.com/apps)'s Request URL
-    * In Features -> Event Subscriptions > "Request URL"
-
-* Open AWS IAM and edit roles
-* Attach the policy `AWSLambdaRole` to the execution role of the web runtime
-   * The `lambda:InvokeFunction` action is required to invoke the worker runtime from the web runtime.
-   * The execution role is automatically created by Cargo Lambda after first deployment
-      * https://www.cargo-lambda.info/commands/deploy.html
+* Execute the following command
 
 ```
 cd ./web
 make deploy
 ```
+
+* Copy the URL displayed on the console after running the command
+* Paste it to the [Slack App](https://api.slack.com/apps)'s Request URL
+    * In Features -> Event Subscriptions > "Request URL"
+* Open AWS IAM and edit roles
+* Attach the policy `AWSLambdaRole` to the execution role of the web runtime
+   * The `lambda:InvokeFunction` action is required to invoke the worker runtime from the web runtime.
+   * The execution role is automatically created by Cargo Lambda after first deployment
+      * https://www.cargo-lambda.info/commands/deploy.html
 
 #### Deploying Worker Runtime
 
