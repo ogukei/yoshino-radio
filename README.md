@@ -44,9 +44,12 @@ make
         * described later in this README
     * In "Subscribe to bot events", add `message.im` scope
 1. In Features -> OAuth & Permissions
-    * Add the following "Bot Token Scopes"s
+    * Add the following "Bot Token Scopes"
         * `chat:write`
         * `im:history`
+        * `files:read`
+    * Add the following "User Token Scopes"
+        * `files:write`
 1. In Features -> OAuth & Permissions, execute "Install to Workspace"
 
 ### 4. Setup Credentials
@@ -60,13 +63,18 @@ SLACK_SIGNING_SECRET=abcdef12345
 ```
 
 * Place `worker/.env.production` env file with the following content
-   * Find your Slack App's client token in the OAuth & Permissions > OAuth Tokens for Your Workspace
-      * https://api.slack.com/apps
-   * Find your OpenAI API key in the console
+    * Find your Slack App's bot user OAuth token
+        * OAuth & Permissions > OAuth Tokens for Your Workspace > Bot User OAuth Token
+        * https://api.slack.com/apps
+    * Find your Slack App's user OAuth token
+        * OAuth & Permissions > OAuth Tokens for Your Workspace > User OAuth Token
+        * https://api.slack.com/apps
+    * Find your OpenAI API key in the console
       * https://platform.openai.com/api-keys
 
 ```
-SLACK_CLIENT_TOKEN=xoxb-12345
+SLACK_BOT_TOKEN=xoxb-12345
+SLACK_USER_TOKEN=xoxb-56789
 OPENAI_API_KEY=sk-12345
 ```
 

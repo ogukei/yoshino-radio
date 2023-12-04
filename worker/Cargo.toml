@@ -5,6 +5,7 @@ edition = "2021"
 
 [package.metadata.lambda.deploy]
 env_file = ".env.production"
+timeout = 300
 
 [dependencies]
 
@@ -23,3 +24,4 @@ cores = { path = "../cores" }
 futures-util = { version = "0.3.0", default-features = false }
 async-stream = "0.3.5"
 tokio-stream = "0.1.14"
+base64 = "0.21.5"

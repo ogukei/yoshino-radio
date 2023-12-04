@@ -11,6 +11,7 @@ mod slack_client;
 mod openai_client;
 mod buffer_stream;
 mod completions;
+mod images;
 
 #[derive(Serialize)]
 struct Response {
@@ -19,7 +20,7 @@ struct Response {
 
 async fn function_handler(event: LambdaEvent<InvokeMessage>) -> Result<Response, Error> {
     let message = event.payload;
-    let handle = MessageHandle::new();
+    let handle = MessageHandle::new()?;
     info!("got body {}", message.body);
     handle.handle_message(message).await?;
     let resp = Response {

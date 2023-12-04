@@ -43,11 +43,16 @@ impl SlackEventMessageHandler {
         let any_event: AnyEventCallbackBody = serde_json::from_str(&body)?;
         let r#type = any_event.event.r#type.as_str();
         // ignore message updates
-        let subtype = any_event.event.subtype;
+        let subtype = any_event.event.subtype
+            .as_ref()
+            .map(|v| v.as_str());
         // ignore bot's messages
         let bot_id = any_event.event.bot_id;
-        match (r#type, subtype, bot_id) {
-            ("message", None, None) => self.handle_slack_message(event_type, body).await,
+        if bot_id.is_some() {
+            return Ok(())
+        }
+        match (r#type, subtype) {
+            ("message", None) | ("message", Some("file_share")) => self.handle_slack_message(event_type, body).await,
             _ => Ok(()),
         }
     }

@@ -74,7 +74,7 @@ pub struct SlackClient {
 
 // https://api.slack.com/messaging/sending
 impl SlackClient {
-    pub async fn new() -> Result<Arc<Self>> {
+    pub fn new() -> Result<Arc<Self>> {
         let client = reqwest::Client::new();
         let this = Self {
             client,
@@ -85,7 +85,7 @@ impl SlackClient {
 
     // https://api.slack.com/methods/chat.postMessage
     pub async fn post(&self, channel: &str, thread_ts: Option<&str>, text: String) -> Result<PostResult> {
-        let client_token = env::var("SLACK_CLIENT_TOKEN")?;
+        let client_token = env::var("SLACK_BOT_TOKEN")?;
         let request_body = PostRequestBody {
             channel: channel.into(),
             text: text.into(),
@@ -110,7 +110,7 @@ impl SlackClient {
 
     // https://api.slack.com/methods/chat.update
     pub async fn update(&self, channel: &str, ts: &str, text: String) -> Result<()> {
-        let client_token = env::var("SLACK_CLIENT_TOKEN")?;
+        let client_token = env::var("SLACK_BOT_TOKEN")?;
         let request_body = UpdateRequestBody {
             channel: channel.into(),
             ts: ts.into(),
@@ -130,7 +130,7 @@ impl SlackClient {
 
     // https://api.slack.com/methods/conversations.replies
     pub async fn replies(&self, channel: &str, ts: &str) -> Result<RepliesResult> {
-        let client_token = env::var("SLACK_CLIENT_TOKEN")?;
+        let client_token = env::var("SLACK_BOT_TOKEN")?;
         let response = self.client.get("https://slack.com/api/conversations.replies")
             .header("Content-type", "application/x-www-form-urlencoded; charset=utf-8")
             .header("Authorization", ["Bearer", &client_token].join(" "))
@@ -144,5 +144,16 @@ impl SlackClient {
             messages: response.messages,
         };
         Ok(result)
-        }
+    }
+
+    pub async fn download_image(&self, url_private_download: &str) -> Result<Vec<u8>> {
+        let client_token = env::var("SLACK_BOT_TOKEN")?;
+        let response = self.client.get(url_private_download)
+            .header("Authorization", ["Bearer", &client_token].join(" "))
+            .send()
+            .await?;
+        let image_bytes = response.bytes().await?;
+        let data = Vec::from(image_bytes);
+        Ok(data)
+    }
 }
